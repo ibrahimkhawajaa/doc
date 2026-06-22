@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Doctor {
+  id              String    @id @default(cuid())
+  name            String
+  specialization  String
+  experience      Int       @default(5)
+  rating          Float     @default(4.5)
+  consultationFee Float     @default(200)
+  location        String
+  hospital        String
+  phone           String?
+  email           String?
+  imageUrl        String?
+  source          String    @default("local")
+  profileUrl      String?
+  scrapedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([specialization])
+}
+
+model Appointment {
+  id              String   @id @default(cuid())
+  patientName     String
+  patientEmail    String
+  patientPhone    String
+  doctorId        String?
+  doctorName      String
+  appointmentDate DateTime
+  timeSlot        String
+  status          String   @default("pending")
+  reason          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  sessionId String
+  message   String
+  response  String
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+}
+
+model AdminLog {
+  id          String   @id @default(cuid())
+  adminId     String
+  action      String
+  description String
+  timestamp   DateTime @default(now())
+}

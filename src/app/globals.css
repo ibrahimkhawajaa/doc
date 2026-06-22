@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --primary: #059669;
+  --primary-dark: #047857;
+  --accent: #0891b2;
+  --card: #ffffff;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --ring: #6ee7b7;
 }
 
 @theme inline {
@@ -12,15 +19,70 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+}
+
+::selection {
+  background: #a7f3d0;
+  color: #064e3b;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+.btn-primary {
+  @apply bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0;
+}
+
+.btn-secondary {
+  @apply bg-white border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-semibold rounded-xl transition-all duration-200;
+}
+
+.input-field {
+  @apply w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition;
+}
+
+.card {
+  @apply bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl transition-shadow duration-300;
+}
+
+.page-shell {
+  @apply min-h-screen bg-gradient-to-b from-emerald-50/80 via-white to-cyan-50/60;
+}
+
+.section-title {
+  @apply text-4xl md:text-5xl font-bold text-slate-900 tracking-tight;
+}
+
+.badge {
+  @apply inline-flex items-center px-4 py-1.5 bg-emerald-100 text-emerald-800 rounded-full text-sm font-semibold;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in-up 0.5s ease-out both;
 }
