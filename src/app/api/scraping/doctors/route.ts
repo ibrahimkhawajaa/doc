@@ -121,8 +121,7 @@ export async function GET(req: NextRequest) {
       
       console.log('Attempting to scrape doctor data...');
       const scrapedDoctors = await scrapeDoctorData(150);
-      
-      if (scrapedDoctors && scrapedDoctors.length > 6) {
+        if (scrapedDoctors && scrapedDoctors.length > 6) {
         // We got real data from Python
         console.log(`Scraped ${scrapedDoctors.length} doctors from live source`);
         doctors = scrapedDoctors.map((doc, index) => normalizeDoctor(doc, index));
