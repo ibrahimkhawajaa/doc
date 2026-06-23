@@ -36,6 +36,15 @@ interface ContactMessage {
   time: string;
 }
 
+interface ScraperStats {
+  lastRunAt: Date | null;
+  nextRunAt: Date | null;
+  successCount: number;
+  failureCount: number;
+  isRunning: boolean;
+  doctorsAdded: number;
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(false);
@@ -44,6 +53,8 @@ export default function AdminPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [contacts, setContacts] = useState<ContactMessage[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [scraperStats, setScraperStats] = useState<ScraperStats | null>(null);
+  const [scraperLoading, setScraperLoading] = useState(false);
   const [newDoctor, setNewDoctor] = useState({
     name: '',
     specialization: '',
@@ -60,10 +71,11 @@ export default function AdminPage() {
 
   const loadData = async () => {
     try {
-      const [apptRes, doctorsRes, contactRes] = await Promise.all([
+      const [apptRes, doctorsRes, contactRes, scraperRes] = await Promise.all([
         fetch('/api/appointments'),
         fetch('/api/doctors'),
         fetch('/api/contact'),
+        fetch('/api/scraping/scheduler?action=stats'),
       ]);
 
       if (apptRes.ok) {
@@ -98,6 +110,13 @@ export default function AdminPage() {
             : 0,
         }));
       }
+
+      if (scraperRes.ok) {
+        const scraperData = await scraperRes.json();
+        if (scraperData.stats) {
+          setScraperStats(scraperData.stats);
+        }
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -110,6 +129,14 @@ export default function AdminPage() {
     } else {
       setAuthenticated(true);
       loadData();
+      // Refresh scraper stats every 5 minutes
+      const interval = setInterval(() => {
+        fetch('/api/scraping/scheduler?action=stats')
+          .then(r => r.json())
+          .then(data => data.stats && setScraperStats(data.stats))
+          .catch(console.error);
+      }, 5 * 60 * 1000);
+      return () => clearInterval(interval);
     }
     setLoading(false);
   }, [router]);
@@ -168,8 +195,19 @@ export default function AdminPage() {
   };
 
   const handleRefreshScraper = async () => {
-    await fetch('/api/scraping/doctors?refresh=true');
-    loadData();
+    setScraperLoading(true);
+    try {
+      const response = await fetch('/api/scraping/scheduler?action=trigger');
+      const data = await response.json();
+      alert(data.message || 'Scraper triggered');
+      // Refresh stats immediately
+      loadData();
+    } catch (error) {
+      console.error('Scraper error:', error);
+      alert('Error triggering scraper');
+    } finally {
+      setScraperLoading(false);
+    }
   };
 
   if (loading) {
@@ -200,9 +238,10 @@ export default function AdminPage() {
           <div className="flex gap-3">
             <button
               onClick={handleRefreshScraper}
-              className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition"
+              disabled={scraperLoading}
+              className="bg-white/20 hover:bg-white/30 disabled:opacity-50 px-4 py-2 rounded-lg text-sm font-semibold transition"
             >
-              Run Scraper
+              {scraperLoading ? 'Scraping...' : 'Run Scraper'}
             </button>
             <button
               onClick={handleLogout}
@@ -501,10 +540,49 @@ export default function AdminPage() {
                     <p className="text-sm text-slate-500 mt-1">Pakistani doctors from Marham.pk</p>
                   </div>
                   <div className="p-6 rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200 md:col-span-2">
-                    <h4 className="font-bold text-slate-900 mb-2">Scraper Status</h4>
-                    <p className="text-sm text-slate-600 mt-2">
-                      Click &quot;Run Scraper&quot; in the header to fetch live Pakistani doctor profiles
-                      with photos from Marham.pk (Karachi, Lahore, Islamabad, and more).
+                    <h4 className="font-bold text-slate-900 mb-3">Automated Scraper Status</h4>
+                    {scraperStats ? (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <p className="text-slate-500">Status</p>
+                          <p className="font-semibold text-slate-900">{scraperStats.isRunning ? '🔄 Running' : '✅ Idle'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500">Success</p>
+                          <p className="font-semibold text-emerald-600">{scraperStats.successCount}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500">Failures</p>
+                          <p className="font-semibold text-red-600">{scraperStats.failureCount}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500">Doctors Added</p>
+                          <p className="font-semibold text-blue-600">{scraperStats.doctorsAdded}</p>
+                        </div>
+                        {scraperStats.lastRunAt && (
+                          <div className="md:col-span-2">
+                            <p className="text-slate-500">Last Run</p>
+                            <p className="font-semibold text-slate-900 text-xs">
+                              {new Date(scraperStats.lastRunAt).toLocaleString()}
+                            </p>
+                          </div>
+                        )}
+                        {scraperStats.nextRunAt && (
+                          <div className="md:col-span-2">
+                            <p className="text-slate-500">Next Run</p>
+                            <p className="font-semibold text-slate-900 text-xs">
+                              {new Date(scraperStats.nextRunAt).toLocaleString()}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-slate-600">Loading scraper stats...</p>
+                    )}
+                    <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+                      The scraper runs automatically every hour to fetch Pakistani doctors from Marham.pk. 
+                      Click &quot;Run Scraper&quot; above to trigger it manually. All new doctors are automatically 
+                      saved to the database.
                     </p>
                   </div>
                 </div>

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// In-memory storage for appointments (will reset on server restart)
-const appointments: any[] = [];
+import { prisma } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,21 +13,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const appointment = {
-      id: `apt_${Date.now()}`,
-      patientName: name,
-      patientEmail: email,
-      patientPhone: phone,
-      doctorId: doctor,
-      doctorName: doctorName || doctor,
-      appointmentDate: new Date(date),
-      timeSlot: time,
-      reason: reason || null,
-      status: 'pending',
-      createdAt: new Date(),
-    };
-
-    appointments.push(appointment);
+    const appointment = await prisma.appointment.create({
+      data: {
+        patientName: name,
+        patientEmail: email,
+        patientPhone: phone || '',
+        doctorId: doctor || null,
+        doctorName: doctorName || doctor || 'Not specified',
+        appointmentDate: new Date(date),
+        timeSlot: time,
+        reason: reason || null,
+        status: 'pending',
+      },
+    });
 
     return NextResponse.json(
       {
@@ -47,6 +43,10 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
+    const appointments = await prisma.appointment.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
     return NextResponse.json(
       appointments.map((apt) => ({
         id: apt.id,
