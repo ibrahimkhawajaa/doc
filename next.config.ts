@@ -30,18 +30,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // ⚠️ Temporary fix for Prisma build errors on Vercel
+  // ✅ Keep this for TypeScript errors (temporary)
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  // Optional: Enable this if you want to see more details during build
-  // logging: {
-  //   fetches: {
-  //     fullUrl: true,
-  //   },
+  // ❌ REMOVE this - no longer supported in next.config.ts
+  // eslint: {
+  //   ignoreDuringBuilds: true,
   // },
 };
 
